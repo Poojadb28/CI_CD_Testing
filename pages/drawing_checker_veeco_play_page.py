@@ -1,174 +1,326 @@
+import os
 import time
+
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
+from utils.logger import get_logger
 from selenium.webdriver.support import expected_conditions as EC
 
+from pages.base_page import BasePage
 
-class DrawingCheckerVeecoPage:
+logger = get_logger(__name__)
+
+
+class DrawingCheckerVeecoPage(BasePage):
 
     def __init__(self, driver):
-        self.driver = driver
-        self.wait = WebDriverWait(driver, 120)
 
-    # def wait_for_page_load(self):
-    #     self.wait.until(
-    #         lambda d: d.execute_script("return document.readyState") == "complete"
-    #     )
+        super().__init__(driver)
 
-    # ---------------- LOCATORS ---------------- #
-    dropdown = (By.XPATH, "//select[contains(@class,'text-sm')]")
-    option = (By.XPATH, "//option[normalize-space()='Drawing Checker - Veeco']")
-    run_btn = (By.XPATH, "//button[contains(text(),'Run Drawing Checker - Veeco')]")
-    view_results = (By.XPATH, "//button[normalize-space()='View Results']")
+    # ==========================================================
+    # LOCATORS
+    # ==========================================================
 
-    search_field = (By.XPATH, "//input[@id='issue-search']")
-    severity_dropdown = (By.XPATH, "//select[@id='severity-filter']")
-    source_dropdown = (By.XPATH, "//select[@id='source-filter']")
+    dropdown = (
+        By.XPATH,
+        "//select[contains(@class,'text-sm')]"
+    )
 
-    drilldown_btn = (By.XPATH, "//button[contains(@class,'drill') or contains(.,'Drill')]")
+    option = (
+        By.XPATH,
+        "//option[normalize-space()='Drawing Checker - Veeco']"
+    )
 
-    download_btn = (By.XPATH, "//a[normalize-space()='Download PDF Report']")
+    run_btn = (
+        By.XPATH,
+        "//button[contains(text(),'Run Drawing Checker - Veeco')]"
+    )
 
-    # ---------------- ACTIONS ---------------- #
+    view_results = (
+        By.XPATH,
+        "//button[normalize-space()='View Results']"
+    )
+
+    search_field = (
+        By.XPATH,
+        "//input[@id='issue-search']"
+    )
+
+    severity_dropdown = (
+        By.XPATH,
+        "//select[@id='severity-filter']"
+    )
+
+    source_dropdown = (
+        By.XPATH,
+        "//select[@id='source-filter']"
+    )
+
+    drilldown_btn = (
+        By.XPATH,
+        "//button[contains(@class,'drill') or contains(.,'Drill')]"
+    )
+
+    download_btn = (
+        By.XPATH,
+        "//a[normalize-space()='Download PDF Report']"
+    )
+
+    # ==========================================================
+    # ACTIONS
+    # ==========================================================
 
     def select_drawing_checker_veeco(self):
-        self.wait.until(EC.element_to_be_clickable(self.dropdown)).click()
-        self.wait.until(EC.element_to_be_clickable(self.option)).click()
+
+        logger.info(
+            "Selecting Drawing Checker - Veeco"
+        )
+
+        self.safe_click(self.dropdown)
+
+        self.safe_click(self.option)
+
+        self.wait_for_page_ready()
 
     def click_run(self):
-        self.wait.until(EC.element_to_be_clickable(self.run_btn)).click()
+
+        logger.info(
+            "Running Drawing Checker - Veeco"
+        )
+
+        self.safe_click(self.run_btn)
+
+        self.wait_for_loader()
 
     def wait_for_processing(self):
-        self.wait.until(EC.element_to_be_clickable(self.view_results))
+
+        self.wait_for_clickable(
+            self.view_results
+        )
 
     def click_view_results(self):
-        self.wait.until(EC.element_to_be_clickable(self.view_results)).click()
 
-    # ---------------- SEARCH ---------------- #
+        logger.info(
+            "Opening results page"
+        )
+
+        self.safe_click(
+            self.view_results
+        )
+
+        self.wait_for_page_ready()
+
+    # ==========================================================
+    # SEARCH
+    # ==========================================================
 
     def search_issue(self, text):
-        field = self.wait.until(EC.visibility_of_element_located(self.search_field))
 
-        self.driver.execute_script(
-            "arguments[0].scrollIntoView({block:'center'});", field
+        self.enter_text(
+            self.search_field,
+            text
         )
-
-        field.clear()
-        field.send_keys(text)
 
     def clear_search(self):
-        field = self.wait.until(EC.visibility_of_element_located(self.search_field))
+
+        field = self.wait_for_visibility(
+            self.search_field
+        )
+
         field.clear()
 
-    # ---------------- FILTERS ---------------- #
+    # ==========================================================
+    # FILTERS
+    # ==========================================================
 
     def filter_by_severity(self, value):
-        dropdown = self.wait.until(EC.element_to_be_clickable(self.severity_dropdown))
+
+        dropdown = self.wait_for_clickable(
+            self.severity_dropdown
+        )
+
         dropdown.click()
 
-        option = self.wait.until(
-            EC.element_to_be_clickable(
-                (By.XPATH, f"//select[@id='severity-filter']/option[normalize-space()='{value}']")
+        option = (
+            By.XPATH,
+            (
+                f"//select[@id='severity-filter']"
+                f"/option[normalize-space()='{value}']"
             )
         )
-        option.click()
+
+        self.safe_click(option)
+
+        self.wait_for_loader()
 
     def filter_by_source(self, value):
-        dropdown = self.wait.until(EC.element_to_be_clickable(self.source_dropdown))
+
+        dropdown = self.wait_for_clickable(
+            self.source_dropdown
+        )
+
         dropdown.click()
 
-        option = self.wait.until(
-            EC.element_to_be_clickable(
-                (By.XPATH, f"//select[@id='source-filter']/option[normalize-space()='{value}']")
+        option = (
+            By.XPATH,
+            (
+                f"//select[@id='source-filter']"
+                f"/option[normalize-space()='{value}']"
             )
         )
-        option.click()
 
-    # ---------------- DRILLDOWN ---------------- #
+        self.safe_click(option)
+
+        self.wait_for_loader()
+
+    # ==========================================================
+    # DRILLDOWN
+    # ==========================================================
 
     def click_drilldown(self):
 
-        time.sleep(2)
+        logger.info(
+            "Opening drilldown"
+        )
 
-        buttons = self.driver.find_elements(*self.drilldown_btn)
-        print("Drilldown buttons:", len(buttons))
+        buttons = self.wait.until(
+            EC.presence_of_all_elements_located(
+                self.drilldown_btn
+            )
+        )
 
-        for btn in buttons:
-            if btn.is_displayed():
+        logger.info(
+            f"Drilldown buttons found: {len(buttons)}"
+        )
+
+        for button in buttons:
+
+            if button.is_displayed():
 
                 self.driver.execute_script(
-                    "arguments[0].scrollIntoView({block:'center'});", btn
+                    (
+                        "arguments[0].scrollIntoView("
+                        "{block:'center'});"
+                    ),
+                    button
                 )
 
-                time.sleep(1)
-
                 try:
-                    btn.click()
-                except:
-                    self.driver.execute_script("arguments[0].click();", btn)
+
+                    button.click()
+
+                except Exception:
+
+                    self.driver.execute_script(
+                        "arguments[0].click();",
+                        button
+                    )
+
+                self.wait_for_page_ready()
+
+                self.wait_for_loader()
 
                 return
 
-        raise Exception("Drilldown button not found")
+        raise Exception(
+            "Drilldown button not found"
+        )
 
-    # ---------------- DOWNLOAD ---------------- #
-
-    # def download_report(self, download_dir):
-
-    #     print("Waiting for Download PDF Report...")
-
-    #     time.sleep(3)
-
-    #     button = self.wait.until(
-    #         EC.element_to_be_clickable(self.download_btn)
-    #     )
-
-    #     self.driver.execute_script(
-    #         "arguments[0].scrollIntoView({block:'center'});", button
-    #     )
-
-    #     time.sleep(1)
-
-    #     try:
-    #         button.click()
-    #     except:
-    #         self.driver.execute_script("arguments[0].click();", button)
+    # ==========================================================
+    # DOWNLOAD REPORT
+    # ==========================================================
 
     def download_report(self, download_dir):
 
-        import os
-        import time
+        logger.info(
+            "Downloading Veeco PDF report"
+        )
 
         if not os.path.exists(download_dir):
-            raise Exception(f"Download directory not found: {download_dir}")
 
-        before_files = set(os.listdir(download_dir))
+            raise FileNotFoundError(
+                (
+                    "Download directory not found: "
+                    f"{download_dir}"
+                )
+            )
 
-        button = self.wait.until(EC.element_to_be_clickable(self.download_btn))
+        before_files = set(
+            os.listdir(download_dir)
+        )
+
+        button = self.wait_for_clickable(
+            self.download_btn
+        )
 
         self.driver.execute_script(
-            "arguments[0].scrollIntoView({block:'center'});", button
+            (
+                "arguments[0].scrollIntoView("
+                "{block:'center'});"
+            ),
+            button
         )
 
         try:
+
             button.click()
-        except:
-            self.driver.execute_script("arguments[0].click();", button)
+
+        except Exception:
+
+            logger.warning(
+                "Normal click failed → using JS click"
+            )
+
+            self.driver.execute_script(
+                "arguments[0].click();",
+                button
+            )
 
         timeout = 120
+
         end_time = time.time() + timeout
 
         while time.time() < end_time:
 
-            after_files = set(os.listdir(download_dir))
-            new_files = after_files - before_files
+            after_files = set(
+                os.listdir(download_dir)
+            )
 
-            completed = [f for f in new_files if not f.endswith(".crdownload")]
+            new_files = (
+                after_files - before_files
+            )
 
-            if any(f.endswith(".pdf") for f in completed):
-                print("Downloaded:", completed)
-                return
+            completed_files = [
 
-            time.sleep(2)
+                file for file in new_files
 
-        raise Exception("Veeco report download failed")
+                if (
+                    file.endswith(".pdf")
+                    and not file.endswith(
+                        ".crdownload"
+                    )
+                )
+            ]
+
+            if completed_files:
+
+                downloaded_file = (
+                    completed_files[0]
+                )
+
+                logger.info(
+                    (
+                        "Downloaded file: "
+                        f"{downloaded_file}"
+                    )
+                )
+
+                return os.path.join(
+                    download_dir,
+                    downloaded_file
+                )
+
+            time.sleep(1)
+
+        raise Exception(
+            "Veeco PDF report download failed"
+        )

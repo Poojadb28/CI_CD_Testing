@@ -1,52 +1,121 @@
-import pytest
 import os
+import pytest
 
 
 @pytest.mark.regression
-def test_tariff_analysis_play(tariff_analysis_play):
+def test_tariff_analysis_play(
+    tariff_analysis_play
+):
 
     tariff = tariff_analysis_play
 
+    # ==========================================================
+    # DOWNLOAD DIRECTORY
+    # ==========================================================
+
     download_dir = os.path.abspath("downloads")
+
     os.makedirs(download_dir, exist_ok=True)
 
-    # ================= EXPORT BOM =================
-    tariff.export_bom(download_dir)
+    # ==========================================================
+    # PAGE VALIDATION
+    # ==========================================================
 
-    # Validate BOM file downloaded
-    bom_files = [
-        f for f in os.listdir(download_dir)
-        if f.endswith(".xlsx") and not f.endswith(".crdownload")
-    ]
+    tariff.wait_for_page_ready()
 
-    assert len(bom_files) > 0, "BOM file not downloaded"
+    assert tariff.driver.current_url is not None
 
-    for file in bom_files:
-        path = os.path.join(download_dir, file)
-        assert os.path.getsize(path) > 0, f"{file} is empty"
+    # ==========================================================
+    # EXPORT BOM
+    # ==========================================================
 
-    # ================= APPROVE BOM =================
+    bom_file = tariff.export_bom(download_dir)
+
+    # Validate file path returned
+    assert bom_file is not None, (
+        "BOM export did not return file path"
+    )
+
+    # Validate file exists
+    assert os.path.exists(bom_file), (
+        f"BOM file not found: {bom_file}"
+    )
+
+    # Validate extension
+    assert bom_file.endswith(".xlsx"), (
+        "BOM export is not XLSX"
+    )
+
+    # Validate file size
+    assert os.path.getsize(bom_file) > 0, (
+        "BOM file is empty"
+    )
+
+    print(f"BOM Downloaded: {bom_file}")
+
+    # ==========================================================
+    # APPROVE BOM
+    # ==========================================================
+
     tariff.approve_bom()
 
-    # ================= COMPLETE HTS WIZARD =================
+    tariff.wait_for_loader()
+
+    # ==========================================================
+    # COMPLETE HTS WIZARD
+    # ==========================================================
+
     tariff.complete_hts_wizard()
+
     tariff.wait_for_processing_complete()
 
-    # ================= EXPORT TARIFF =================
-    tariff.export_tariff(download_dir)
+    # ==========================================================
+    # EXPORT TARIFF
+    # ==========================================================
 
-    # Validate Tariff file downloaded
-    tariff_files = [
-        f for f in os.listdir(download_dir)
-        if "tariff" in f.lower() and f.endswith(".xlsx")
-    ]
+    tariff_file = tariff.export_tariff(
+        download_dir
+    )
 
-    assert len(tariff_files) > 0, "Tariff file not downloaded"
+    # Validate file path returned
+    assert tariff_file is not None, (
+        "Tariff export did not return file path"
+    )
 
-    for file in tariff_files:
-        path = os.path.join(download_dir, file)
-        assert os.path.getsize(path) > 0, f"{file} is empty"
+    # Validate file exists
+    assert os.path.exists(tariff_file), (
+        f"Tariff file not found: {tariff_file}"
+    )
 
-    # ================= BACK =================
+    # Validate extension
+    assert tariff_file.endswith(".xlsx"), (
+        "Tariff export is not XLSX"
+    )
+
+    # Validate filename contains tariff
+    assert "tariff" in os.path.basename(
+        tariff_file
+    ).lower(), (
+        "Downloaded file is not tariff report"
+    )
+
+    # Validate file size
+    assert os.path.getsize(tariff_file) > 0, (
+        "Tariff file is empty"
+    )
+
+    print(f"Tariff Downloaded: {tariff_file}")
+
+    # ==========================================================
+    # BACK NAVIGATION
+    # ==========================================================
+
     tariff.go_back()
 
+    tariff.wait_for_page_ready()
+
+    # ==========================================================
+    # FINAL VALIDATION
+    # ==========================================================
+
+    assert tariff.driver.current_url is not None
