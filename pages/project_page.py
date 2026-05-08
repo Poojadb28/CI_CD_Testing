@@ -35,11 +35,24 @@ class ProjectPage(BasePage):
 
         self.wait_for_page_ready()
 
+        self.wait_for_loader()
+
+        self.wait_for_visibility(
+            (
+                By.XPATH,
+                "//div[contains(@class,'flex-1')]"
+            )
+        )
+
     # ==========================================================
     # ROOT SPACE
     # ==========================================================
 
     def right_click_on_canvas(self):
+
+        self.wait_for_page_ready()
+
+        self.wait_for_loader()
 
         canvas = self.wait_for_visibility(
             (
@@ -59,14 +72,19 @@ class ProjectPage(BasePage):
             .context_click(canvas)\
             .perform()
 
-        self.wait_for_visibility(
-            (
-                By.XPATH,
-                "//*[contains(text(),'New Root Space')]"
+        # IMPORTANT FOR JENKINS
+        self.wait.until(
+            EC.presence_of_all_elements_located(
+                (
+                    By.XPATH,
+                    "//*[contains(text(),'New Root Space')]"
+                )
             )
         )
 
     def click_new_root_space(self):
+
+        self.wait_for_page_ready()
 
         elements = self.wait.until(
             EC.presence_of_all_elements_located(
@@ -82,9 +100,16 @@ class ProjectPage(BasePage):
             if element.is_displayed():
 
                 self.driver.execute_script(
+                    "arguments[0].scrollIntoView({block:'center'});",
+                    element
+                )
+
+                self.driver.execute_script(
                     "arguments[0].click();",
                     element
                 )
+
+                self.wait_for_loader()
 
                 return
 
@@ -151,6 +176,8 @@ class ProjectPage(BasePage):
             f"//*[text()='{name}']"
         )
 
+        self.wait_for_page_ready()
+
         element = self.wait_for_visibility(locator)
 
         self.driver.execute_script(
@@ -164,10 +191,12 @@ class ProjectPage(BasePage):
             .context_click(element)\
             .perform()
 
-        self.wait_for_visibility(
-            (
-                By.XPATH,
-                "//*[contains(text(),'Edit')]"
+        self.wait.until(
+            EC.presence_of_all_elements_located(
+                (
+                    By.XPATH,
+                    "//*[contains(text(),'Edit')]"
+                )
             )
         )
 
@@ -190,6 +219,8 @@ class ProjectPage(BasePage):
                     "arguments[0].click();",
                     element
                 )
+
+                self.wait_for_loader()
 
                 return
 
@@ -387,7 +418,27 @@ class ProjectPage(BasePage):
 
         self.wait_for_page_ready()
 
-        self.safe_click(locator)
+        self.wait.until(
+            lambda d: project_name in d.page_source
+        )
+
+        element = self.wait_for_visibility(locator)
+
+        self.driver.execute_script(
+            "arguments[0].scrollIntoView({block:'center'});",
+            element
+        )
+
+        try:
+
+            element.click()
+
+        except Exception:
+
+            self.driver.execute_script(
+                "arguments[0].click();",
+                element
+            )
 
         self.wait_for_loader()
 
