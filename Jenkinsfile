@@ -62,18 +62,20 @@ pipeline {
             steps {
 
                 bat '''
+                echo =====================================
+                echo VERIFYING PYTHON
+                echo =====================================
+
                 echo Python Path:
                 echo %PYTHON%
 
                 "%PYTHON%" --version
-
-                where python
                 '''
             }
         }
 
         // ======================================================
-        // CREATE VENV
+        // CREATE VIRTUAL ENVIRONMENT
         // ======================================================
 
         stage('Create Virtual Environment') {
@@ -81,6 +83,10 @@ pipeline {
             steps {
 
                 bat '''
+                echo =====================================
+                echo CREATING VIRTUAL ENVIRONMENT
+                echo =====================================
+
                 "%PYTHON%" -m venv venv
                 '''
             }
@@ -95,18 +101,15 @@ pipeline {
             steps {
 
                 bat '''
+                echo =====================================
+                echo INSTALLING DEPENDENCIES
+                echo =====================================
+
                 call venv\\Scripts\\activate
 
                 python -m pip install --upgrade pip
 
                 pip install -r requirements.txt
-
-                pip install pytest
-                pip install pytest-html
-                pip install pytest-xdist
-                pip install pytest-rerunfailures
-                pip install pytest-timeout
-                pip install webdriver-manager
                 '''
             }
         }
@@ -120,13 +123,15 @@ pipeline {
             steps {
 
                 bat '''
+                echo =====================================
+                echo VERIFYING ENVIRONMENT
+                echo =====================================
+
                 call venv\\Scripts\\activate
 
                 python --version
 
                 pip --version
-
-                where python
 
                 pip list
                 '''
@@ -134,7 +139,7 @@ pipeline {
         }
 
         // ======================================================
-        // CREATE REPORT DIRECTORIES
+        // CREATE REPORT FOLDERS
         // ======================================================
 
         stage('Create Report Folders') {
@@ -142,6 +147,10 @@ pipeline {
             steps {
 
                 bat '''
+                echo =====================================
+                echo CREATING REPORT FOLDERS
+                echo =====================================
+
                 if not exist reports mkdir reports
 
                 if not exist screenshots mkdir screenshots
@@ -162,6 +171,10 @@ pipeline {
             steps {
 
                 bat '''
+                echo =====================================
+                echo RUNNING PYTEST SUITE
+                echo =====================================
+
                 call venv\\Scripts\\activate
 
                 pytest ^
@@ -235,7 +248,10 @@ pipeline {
 
         cleanup {
 
-            cleanWs(deleteDirs: true)
+            cleanWs(
+                deleteDirs: true,
+                disableDeferredWipeout: true
+            )
         }
     }
 }
